@@ -269,7 +269,6 @@ public class Store
         return _tree.GetInventory(bucket);
     }
 
-
     // public void UpdateInventory(int bucket, float delta)
     // {
     //     _tree.UpdateInventory(bucket, del)
