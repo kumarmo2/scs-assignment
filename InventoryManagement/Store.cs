@@ -47,7 +47,7 @@ class BucketAVLTree
             return;
         }
         Inorder(node.Left);
-        Console.WriteLine($"{node.BucketId}, height: {node.Height}");
+        // // Console.WriteLine($"{node.BucketId}, height: {node.Height}");
         Inorder(node.Right);
     }
 
@@ -73,7 +73,7 @@ class BucketAVLTree
         toReturn.Right = node;
         node.Height = int.Max(Height(node.Left), Height(node.Right)) + 1;
         toReturn.Height = int.Max(Height(toReturn.Left), node.Height) + 1;
-        Console.WriteLine($"single rotated bucketId: {node.BucketId}, node's height: {node.Height}");
+        // // Console.WriteLine($"single rotated bucketId: {node.BucketId}, node's height: {node.Height}");
 
         return toReturn;
     }
@@ -85,7 +85,7 @@ class BucketAVLTree
         toReturn.Left = node;
         node.Height = int.Max(Height(node.Left), Height(node.Right)) + 1;
         toReturn.Height = int.Max(Height(toReturn.Right), node.Height) + 1;
-        Console.WriteLine($"single RR rotated bucketId: {node.BucketId}, node's height: {node.Height}");
+        // Console.WriteLine($"single RR rotated bucketId: {node.BucketId}, node's height: {node.Height}");
 
         return toReturn;
     }
@@ -111,7 +111,7 @@ class BucketAVLTree
         }
         else if (newBucketId < root.BucketId)
         {
-            Console.WriteLine($"going to left tree, {newBucketId}, root.bucketId: {root.BucketId}");
+            // Console.WriteLine($"going to left tree, {newBucketId}, root.bucketId: {root.BucketId}");
             root.Left = Insert(root.Left, newBucketId);
             if ((Height(root.Left) - Height(root.Right) == 2))
             {
@@ -128,7 +128,7 @@ class BucketAVLTree
         else if (newBucketId > root.BucketId)
         {
             root.Right = Insert(root.Right, newBucketId);
-            Console.WriteLine($"going to right tree, {newBucketId}, root.bucketId: {root.BucketId}, root.right: {root.Right.BucketId}");
+            // Console.WriteLine($"going to right tree, {newBucketId}, root.bucketId: {root.BucketId}, root.right: {root.Right.BucketId}");
 
 
             if ((Height(root.Right) - Height(root.Left) == 2))
@@ -144,9 +144,69 @@ class BucketAVLTree
             }
         }
         root.Height = int.Max(Height(root.Left), Height(root.Right)) + 1;
-        Console.WriteLine($"returning root for bucketId: {newBucketId}, its height: {root.Height}");
+        // Console.WriteLine($"returning root for bucketId: {newBucketId}, its height: {root.Height}");
         return root;
     }
+
+    internal void UpdateInventory(int bucket, float delta)
+    {
+        UpdateInventoryBinarySearch(_root, bucket, delta);
+    }
+
+    internal float GetInventory(int bucket)
+    {
+        return GetInventoryBinarySearch(_root, bucket);
+
+    }
+
+    private float GetInventoryBinarySearch(BucketTreeNode node, int bucket)
+    {
+        if (node is null)
+        {
+            throw new Exception("bucket not found");
+        }
+
+        if (bucket < node.BucketId)
+        {
+            return GetInventoryBinarySearch(node.Left, bucket);
+        }
+        else if (bucket > node.BucketId)
+        {
+            var returned = GetInventoryBinarySearch(node.Right, bucket);
+            return returned + node.LeftTreeInventory + node.InventoryAtBucket;
+        }
+        return node.InventoryAtBucket + node.LeftTreeInventory;
+    }
+
+
+
+    private float UpdateInventoryBinarySearch(BucketTreeNode node, int bucket, float delta)
+    {
+        if (node is null)
+        {
+            // ideally this should never be reached
+            throw new Exception("bucket not found");
+        }
+
+        if (bucket < node.BucketId)
+        {
+            var leftTreeInventory = UpdateInventoryBinarySearch(node.Left, bucket, delta);
+            node.LeftTreeInventory = leftTreeInventory;
+        }
+        else if (bucket > node.BucketId)
+        {
+            var rightTreeInventory = UpdateInventoryBinarySearch(node.Right, bucket, delta);
+            node.RightTreeInventory = rightTreeInventory;
+        }
+        else
+        {
+            node.InventoryAtBucket += delta;
+        }
+        return node.InventoryAtBucket + node.LeftTreeInventory + node.RightTreeInventory;
+    }
+
+
+
 }
 
 public class Store
@@ -175,6 +235,45 @@ public class Store
         }
         return store;
     }
+
+    public void AddSupply(int bucket, float delta)
+    {
+        if (bucket >= _bucketCount)
+        {
+            throw new Exception("Bucket is not found");
+        }
+        /*
+         * - Find the node.
+         * - update the inventory.
+         * */
+        _tree.UpdateInventory(bucket, delta);
+
+    }
+
+    public void AddDemand(int bucket, float delta)
+    {
+        if (bucket >= _bucketCount)
+        {
+            throw new Exception("Bucket is not found");
+        }
+        /*
+         * - Find the node.
+         * - update the inventory.
+         * */
+        _tree.UpdateInventory(bucket, -delta);
+
+    }
+
+    public float GetInventory(int bucket)
+    {
+        return _tree.GetInventory(bucket);
+    }
+
+
+    // public void UpdateInventory(int bucket, float delta)
+    // {
+    //     _tree.UpdateInventory(bucket, del)
+    // }
 
     public int Height { get { return _tree.GetHeight(); } }
 }
